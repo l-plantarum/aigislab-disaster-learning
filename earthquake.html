@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>プレートと地震・火山</title>
+<style>
+/* VOICE: 地学の図説のように、はっきり・正確・授業で投影して読める
+   IDEA: 教科書の「日本列島の断面図」が動き出す
+   PICTURE: 大きなキャンバスに地図→断面。プレートが動き、ひずみ、割れる
+   COLOUR and TYPE: 海の青・地殻の土色・マントルの橙、地震は黄と赤。Zen Kaku Gothic New
+   LAYOUT: 見出し → 場面ボタン → 大きな図 → 説明 → 数字の表 */
+:root{color-scheme:light dark;--bg:light-dark(#f4f1ea,#12161d);--ink:light-dark(#1d232c,#e9e6df);--sub:light-dark(#5a6270,#a7adb8);--panel:light-dark(#ffffff,#1b212b);--line:light-dark(#d9d3c6,#2e3644);--acc:#d7263d;--sea:#1f6fb2}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Zen Kaku Gothic New","Hiragino Sans","Yu Gothic UI","Yu Gothic","Meiryo","Noto Sans JP",sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3vw,40px) max(4vw,14px)}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font-size:clamp(28px,4vw,44px);line-height:1.1;margin:0 0 6px;text-wrap:balance;font-weight:900}
+.lead{margin:0;color:var(--sub);max-width:60em}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 10px}
+.tabs button,.ctl button{font:inherit;font-size:15px;min-height:44px;padding:6px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--sea);border-color:var(--sea);color:#fff;font-weight:700}
+button:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+.fig{position:relative;aspect-ratio:1000/560;border-radius:14px;overflow:hidden;background:#cfe6f4;box-shadow:0 1px 0 var(--line),0 10px 30px rgba(0,0,0,.12)}
+.fig>canvas{position:absolute;inset:0;width:100%;height:100%}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.ctl label{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--sub)}
+.ctl input[type=range]{width:140px;accent-color:var(--sea)}
+.status{margin-top:8px;padding:8px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-weight:700;min-height:44px}
+.cap{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.cap h2{font-size:22px;line-height:1.25;margin:0 0 8px}
+.cap p{margin:0 0 10px}
+.cap ul{margin:0;padding-inline-start:1.2em}
+.cap li{margin:3px 0}
+.tag{display:inline-block;font-size:13px;padding:1px 8px;border-radius:99px;background:light-dark(#eef3f8,#243042);color:var(--ink);margin-bottom:8px}
+h3{font-size:22px;margin:0 0 10px}
+table{border-collapse:collapse;width:100%;background:var(--panel);border-radius:12px;overflow:hidden}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top;font-size:15px}
+th{background:light-dark(#e9e4d8,#232a36)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px;margin-top:18px}
+.notes div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.notes h4{margin:0 0 6px;font-size:17px}
+.notes p{margin:0;font-size:15px}
+.src{font-size:14px;color:var(--sub);margin-top:16px}
+.src a{color:inherit}
+.nowrap{white-space:nowrap}
+@media(max-width:1000px){.stage{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.tabs button{font-size:14px;padding:6px 10px}table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;font-weight:700}.stack td:empty{display:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<div class="band"><div class="wrap">
+  <h1>日本の下で起きていること</h1>
+  <p class="lead">プレートが沈み込むと、ひずみがたまって地震が起き、地下ではマグマが生まれる。北広島町を通る断面で、6つの場面を順に動かして見ます。</p>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button role="tab" id="t0" aria-selected="true">1 日本とプレート</button>
+    <button role="tab" id="t1" aria-selected="false">2 南海トラフ地震</button>
+    <button role="tab" id="t2" aria-selected="false">3 安芸灘の地震</button>
+    <button role="tab" id="t3" aria-selected="false">4 筒賀断層</button>
+    <button role="tab" id="t4" aria-selected="false">5 マグマ・火山・温泉</button>
+    <button role="tab" id="t5" aria-selected="false">6 まとめ</button>
+  </div>
+
+  <div class="stage">
+    <div>
+      <div class="fig"><canvas id="cv" aria-label="プレートと地震・火山のアニメーション"></canvas></div>
+      <div class="ctl">
+        <button id="prev">◀ 前へ</button>
+        <button id="play">⏸ 一時停止</button>
+        <button id="next">次へ ▶</button>
+        <button id="again">最初から</button>
+        <label>速さ <input type="range" id="spd" min="0.25" max="2" step="0.25" value="1"><span id="spdv">1倍</span></label>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+    <aside class="cap" id="cap"></aside>
+  </div>
+</div></div>
+
+<div class="band" style="padding-top:0"><div class="wrap">
+  <h3>3つの地震を数字で比べる</h3>
+  <div class="scroll">
+  <table class="stack">
+    <thead><tr><th>地震</th><th>どこで割れる</th><th>規模</th><th>今後30年に起きる確率</th><th>北広島町との関係</th></tr></thead>
+    <tbody>
+      <tr><td>南海トラフ地震</td><td>2枚のプレートの境目（深さ約10〜30km）</td><td class="nowrap">M8〜9クラス</td><td>60〜90%程度以上（別の計算方法では20〜50%）</td><td>県の想定で町の最大震度は5強。揺れが長く続く</td></tr>
+      <tr><td>安芸灘〜伊予灘〜豊後水道の地震</td><td>沈み込んだフィリピン海プレートの中（深さ約50km）</td><td class="nowrap">M6.7〜7.4</td><td>40%程度</td><td>1905年（M7.2）は広島市・呉市で震度5〜6相当。2001年芸予地震（M6.7）も同じタイプ</td></tr>
+      <tr><td>筒賀断層</td><td>陸のプレートの中の活断層（深さ約15kmより浅い）</td><td class="nowrap">M7.8程度</td><td>不明（過去の活動のデータがない）</td><td>町内から安芸太田町・廿日市市へのびる長さ約58km。真上が震源になりうる</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="notes">
+    <div><h4>断面は「模式図」</h4><p>足摺岬沖から安芸灘・広島・北広島町・三瓶山を通る線で切ったイメージです。深さは実際に近い縮尺ですが、山の高さは約14倍に強調しています。プレートの深さはおよその値です。</p></div>
+    <div><h4>安芸灘の地震は「海溝型」？</h4><p>地震本部は「海溝で起こる地震」の仲間として評価しています。ただし割れる場所はプレートの境目ではなく、沈み込んだプレートの内部です（プレート内地震）。授業ではこの違いを押さえると、南海トラフとの区別がはっきりします。</p></div>
+    <div><h4>プレートの名前</h4><p>高校の教科書に合わせて「ユーラシアプレート」と書いています。研究では、西日本がのる部分を「アムールプレート」として分けることもあります。プレートの境目にもはっきりしない所があります（地図の点線）。</p></div>
+    <div><h4>火山と温泉</h4><p>「沈み込んだプレートから水が出て、マントルがとけてマグマになる」は東日本の火山でよく説明されるモデルです。山陰の三瓶山などのマグマのでき方は研究が続いています。また地下は深いほど熱い（100mで約3℃）ので、火山がない場所にも温泉はあります。</p></div>
+  </div>
+
+  <p class="src">出典：地震調査研究推進本部「筒賀断層」「安芸灘〜伊予灘〜豊後水道のプレート内地震」各ページ、南海トラフの長期評価 一部改訂（2025年9月）、広島地方気象台「明治の芸予地震」、広島県 地震被害想定（令和7年10月）。
+  <a href="https://jishin.go.jp/regional_seismicity/rs_katsudanso/tsutsuga/">筒賀断層</a> ・
+  <a href="https://jishin.go.jp/regional_seismicity/rs_kaiko/rs_aki-iyo-bungo/">安芸灘〜豊後水道</a> ・
+  <a href="https://www.data.jma.go.jp/hiroshima/jishin/meiji_geiyo.pdf">明治の芸予地震</a> ・
+  <a href="https://scienceportal.jst.go.jp/stories/20251022_e01/">南海トラフの確率見直し</a></p>
+</div></div>
+
+<script>
+{
+const CAPS=[
+ {tag:'場面1',h:'日本列島は4枚のプレートの境目',p:'日本の周りでは、海のプレート（太平洋プレート・フィリピン海プレート）が、陸のプレートの下へ少しずつ沈み込んでいます。',li:['西日本では、フィリピン海プレートが北西へ年に数cm動き、南海トラフでユーラシアプレートの下に潜り込む','東日本では、太平洋プレートが日本海溝で北アメリカプレートの下へ（年に約8cm）','赤い線が筒賀断層、点線の楕円が安芸灘の地震の領域。右下が広島周辺の拡大図','A–B の線で切った断面を、次の場面から動かします']},
+ {tag:'場面2',h:'南海トラフ地震 ― プレートの境目がはね返る',p:'沈み込む海のプレートに、陸のプレートの先がくっついて引きずり込まれます。ひずみが限界をこえると、境目が一気にずれて陸のプレートがはね上がります。',li:['これが海溝型（プレート境界）の巨大地震','海底が持ち上がるので、海水ごと持ち上げられて津波が起きる','おおむね100〜150年ごとにくり返してきた。前回（1944・1946年）から約80年','北広島町の想定最大震度は5強（広島県）']},
+ {tag:'場面3',h:'安芸灘の地震 ― 沈み込んだプレートの中で割れる',p:'安芸灘の下、深さ約50kmには、沈み込んだフィリピン海プレートがあります。曲げられ引っ張られたプレートの中の岩盤が割れて地震が起きます。',li:['1905年の芸予地震（M7.2）、2001年の芸予地震（M6.7）がこのタイプ','17世紀以降、M6.7〜7.4が7回（1649・1686・1749・1854・1857・1905・2001年）','今後30年以内の確率は40%程度','震源が深いので、広い範囲が同じくらい揺れやすい']},
+ {tag:'場面4',h:'筒賀断層 ― 足もとの活断層',p:'プレートに押され続けた陸の岩盤には、ひずみがたまります。弱い面（断層）がずれると、浅い所で地震が起きます。',li:['北広島町〜安芸太田町〜廿日市市、長さ約58km','右横ずれ断層：向こう側が右へずれる。川が断層のところで右に曲がっている','全体が動けばM7.8程度、ずれは6m程度','30年確率は「不明」。不明は「安全」ではない']},
+ {tag:'場面5',h:'マグマが上がって、火山と温泉ができる',p:'沈み込むプレートは水をふくんだまま深く入り、熱と圧力で水をしぼり出します。水が入ったマントルはとけやすくなり、マグマができます。',li:['マグマはまわりより軽いので上へ上がり、地下にマグマだまりをつくる','マグマが地表に出ると噴火。くり返して火山ができる（例：三瓶山）','しみこんだ雨水がマグマの熱で温められると温泉になる','火山は、海溝から離れた陸の側に帯のように並ぶ']},
+ {tag:'場面6',h:'まとめ ― ぜんぶ同じ「沈み込み」から',p:'プレートが沈み込むことで、3つのタイプの地震と、火山・温泉が生まれています。',li:['プレートの境目：南海トラフ地震（巨大・津波）','沈み込んだプレートの中：安芸灘の地震（深い）','陸のプレートの中：筒賀断層（浅い・真下で起きうる）','地下の熱：火山と温泉のめぐみ']}
+];
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const W=1000,H=560;
+let sc=1,dpr=1,scene=0,T=0,prevT=0,playing=true,speed=1,shake=0,last=performance.now();
+const ripples=[],parts=[];let chamber=0,lastStatus='';
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- 断面の座標 ---------- */
+const Y0=118,DS=3.1,EL=14;
+const X=km=>40+km*2, Yd=d=>Y0+d*DS;
+function interp(p,x){if(x<=p[0][0])return p[0][1];for(let i=1;i<p.length;i++)if(x<=p[i][0]){const a=p[i-1],b=p[i];return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]);}return p[p.length-1][1];}
+const SURF=[[-20,-4.8],[60,-4.8],[66,-4.9],[90,-3.5],[120,-1.5],[140,-0.2],[146,0.1],[170,0.6],[200,1.4],[225,1.0],[245,1.6],[265,0.4],[272,0],[276,-1],[328,-1],[333,0.05],[345,0.4],[360,0.6],[372,0.75],[383,1.1],[395,0.7],[410,0.5],[425,0.3],[433,0],[440,-0.4],[480,-1.5]];
+const SLAB=[[-20,4.8],[66,5],[100,9],[144,18],[200,27],[272,38],[300,43],[333,48],[366,54],[400,64],[430,80],[480,120]];
+const surfY=km=>{const e=interp(SURF,km);return e>=0?Y0-e*EL:Y0-e*DS;};
+const top=[];for(let km=-20;km<=480;km+=2)top.push([X(km),Yd(interp(SLAB,km))]);
+for(let k=0;k<3;k++)for(let i=1;i<top.length-1;i++)top[i][1]=(top[i-1][1]+2*top[i][1]+top[i+1][1])/4;
+const nrm=[],cum=[0];
+for(let i=0;i<top.length;i++){const a=top[Math.max(0,i-1)],b=top[Math.min(top.length-1,i+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const L=Math.hypot(tx,ty);nrm.push([-ty/L,tx/L]);if(i)cum.push(cum[i-1]+Math.hypot(top[i][0]-top[i-1][0],top[i][1]-top[i-1][1]));}
+const TH=32*DS, bot=top.map((p,i)=>[p[0]+nrm[i][0]*TH,p[1]+nrm[i][1]*TH]);
+function atS(s){let i=1;while(i<cum.length-1&&cum[i]<s)i++;const f=(s-cum[i-1])/(cum[i]-cum[i-1]);const a=top[i-1],b=top[i];return{x:a[0]+(b[0]-a[0])*f,y:a[1]+(b[1]-a[1])*f,nx:nrm[i][0],ny:nrm[i][1]};}
+function topAt(x){for(let i=1;i<top.length;i++)if(top[i][0]>=x){const a=top[i-1],b=top[i];return a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]);}return top[top.length-1][1];}
+
+/* ---------- 描画の道具 ---------- */
+const F=(w,s)=>`${w} ${s}px "Zen Kaku Gothic New","Hiragino Sans","Yu Gothic UI","Yu Gothic","Meiryo","Noto Sans JP",sans-serif`;
+let MIR=false;
+function label(t,x,y,o={}){if(MIR){ctx.save();ctx.translate(x,0);ctx.scale(-1,1);ctx.translate(-x,0);const a=o.a==='left'?'right':o.a==='right'?'left':o.a;MIR=false;label(t,x,y,{...o,a});MIR=true;ctx.restore();return;}ctx.font=F(o.w||700,o.s||15);ctx.textAlign=o.a||'center';ctx.textBaseline='middle';ctx.lineJoin='round';if(o.halo!==false){ctx.strokeStyle=o.hc||'rgba(255,255,255,.92)';ctx.lineWidth=o.hw||4;ctx.strokeText(t,x,y);}ctx.fillStyle=o.c||'#1d232c';ctx.fillText(t,x,y);}
+function star(x,y,r,a=1){ctx.save();ctx.globalAlpha=a;ctx.beginPath();for(let i=0;i<10;i++){const rr=i%2?r*.45:r,an=-Math.PI/2+i*Math.PI/5;ctx.lineTo(x+Math.cos(an)*rr,y+Math.sin(an)*rr);}ctx.closePath();ctx.fillStyle='#ffd23f';ctx.fill();ctx.strokeStyle='#c1121f';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();}
+function arrow(x1,y1,x2,y2,c,w=4,h=12){const an=Math.atan2(y2-y1,x2-x1);ctx.strokeStyle=c;ctx.fillStyle=c;ctx.lineWidth=w;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-Math.cos(an)*h*.6,y2-Math.sin(an)*h*.6);ctx.stroke();ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-Math.cos(an-0.45)*h,y2-Math.sin(an-0.45)*h);ctx.lineTo(x2-Math.cos(an+0.45)*h,y2-Math.sin(an+0.45)*h);ctx.closePath();ctx.fill();}
+function box(x,y,w,h,r=10){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
+const G=v=>Math.exp(-(v*v));
+
+/* ---------- 地震の周期 ---------- */
+const crossed=(C,L)=>Math.floor((T-L)/C)>Math.floor((prevT-L)/C);
+function nankai(t){const C=9,L=6.2,tc=((t%C)+C)%C;if(tc<L)return{A:14*tc/L,ph:tc<2.6?0:1,k:-1};const k=tc-L;return{A:-6*Math.exp(-k*1.6)*Math.cos(k*2.2),ph:2,k};}
+const defAt=(km,A)=>km<66||km>300?0:A*(G((km-115)/38)-0.3*G((km-215)/45));
+
+/* ---------- 断面 ---------- */
+function drawSection(A){
+  let g=ctx.createLinearGradient(0,0,0,Y0);g.addColorStop(0,'#cfe6f4');g.addColorStop(1,'#eef6fb');ctx.fillStyle=g;ctx.fillRect(0,0,W,Y0);
+  g=ctx.createLinearGradient(0,Y0,0,H);g.addColorStop(0,'#f3c07a');g.addColorStop(1,'#c9542c');ctx.fillStyle=g;ctx.fillRect(0,Y0,W,H-Y0);
+  ctx.fillStyle='#2f7fc4';ctx.fillRect(0,Y0,W,18);
+  // 深さの目安
+  ctx.setLineDash([4,6]);ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=1;
+  for(const d of [50,100]){ctx.beginPath();ctx.moveTo(0,Yd(d));ctx.lineTo(W,Yd(d));ctx.stroke();label(d+'km',d===50?6:580,Yd(d)-9,{a:'left',s:13,w:500,c:'#fff',halo:false});}
+  ctx.setLineDash([]);
+  // 海のプレート
+  ctx.beginPath();top.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));for(let i=bot.length-1;i>=0;i--)ctx.lineTo(bot[i][0],bot[i][1]);ctx.closePath();
+  g=ctx.createLinearGradient(0,Y0,0,H);g.addColorStop(0,'#566a92');g.addColorStop(1,'#34425f');ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle='#26324a';ctx.lineWidth=2;ctx.stroke();
+  const off=(T*11)%34;ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=2;
+  for(let s=off;s<cum[cum.length-1];s+=34){const p=atS(s);ctx.beginPath();ctx.moveTo(p.x+p.nx*6,p.y+p.ny*6);ctx.lineTo(p.x+p.nx*(TH-6),p.y+p.ny*(TH-6));ctx.stroke();}
+  // 陸のプレート
+  ctx.beginPath();for(let km=66;km<=480;km+=2){const y=surfY(km)+defAt(km,A);km===66?ctx.moveTo(X(km),y):ctx.lineTo(X(km),y);}
+  for(let km=480;km>=66;km-=2)ctx.lineTo(X(km),Math.min(topAt(X(km)),Yd(35)));ctx.closePath();
+  g=ctx.createLinearGradient(0,Y0-20,0,Yd(35));g.addColorStop(0,'#d8b47a');g.addColorStop(1,'#a97c45');ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle='#6f5129';ctx.lineWidth=1.5;ctx.stroke();
+  // 地表の緑
+  ctx.beginPath();let on=false;for(let km=140;km<=436;km+=2){const e=interp(SURF,km);const y=surfY(km)+defAt(km,A);if(e>0){on?ctx.lineTo(X(km),y):ctx.moveTo(X(km),y);on=true;}else on=false;}
+  ctx.strokeStyle='#5b8c3a';ctx.lineWidth=4;ctx.stroke();
+  // 三瓶山
+  const vx=X(416),vb=surfY(416);ctx.beginPath();ctx.moveTo(vx-20,vb+2);ctx.lineTo(vx-4,Y0-34);ctx.lineTo(vx+4,Y0-34);ctx.lineTo(vx+20,vb+2);ctx.closePath();ctx.fillStyle='#8a6a4a';ctx.fill();ctx.strokeStyle='#5d4630';ctx.lineWidth=1.5;ctx.stroke();
+  // 地名
+  const PL=[[66,'南海トラフ',0],[210,'四国山地',0],[335,'広島市',0],[416,'三瓶山',0],[146,'足摺岬',1],[300,'安芸灘',1],[366,'北広島町',1],[458,'日本海',1],[22,'太平洋',1]];
+  for(const[km,t,r] of PL){const y=r?56:28,x=X(km),red=t==='北広島町';ctx.strokeStyle='rgba(29,35,44,.35)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y+10);ctx.lineTo(x,(t==='三瓶山'?Y0-36:surfY(km))-2);ctx.stroke();label(t,x,y,{c:red?'#c1121f':'#1d232c',s:red?16:15});}
+  label('A',14,Y0-14,{s:18,c:'#111'});label('B',W-14,Y0-14,{s:18,c:'#111'});
+  label('フィリピン海プレート（海のプレート）',52,Y0+88,{a:'left',c:'#fff',halo:false,s:15});
+  label('ユーラシアプレート（陸のプレート）',X(250),Yd(10),{c:'#3b2a12',hc:'rgba(255,240,215,.8)'});
+  label('マントル',X(300),Yd(108),{c:'#fff',halo:false,s:17});
+}
+
+/* ---------- 各場面のかさね描き ---------- */
+function nankaiLayer(st,full){
+  const x1=X(70),x2=X(232);ctx.lineWidth=7;ctx.lineCap='round';
+  ctx.strokeStyle=st.ph===2?'rgba(255,210,63,.95)':`rgba(215,38,61,${0.25+0.6*Math.max(0,st.A)/14})`;
+  ctx.beginPath();for(let x=x1;x<=x2;x+=4){const y=topAt(x);x===x1?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();
+  if(full){label('くっついている所（固着域）',X(200),topAt(X(200))-20,{c:'#7a1020',hc:'rgba(255,240,215,.85)',s:14});
+    if(st.ph<2)arrow(X(118),Yd(4),X(124),Yd(11),'#c1121f',3,10);}
+
+  if(st.ph===2){star(X(150),topAt(X(150)),18,Math.max(0,1-st.k/2.6));
+    const k=st.k,d=k*120,h=11*Math.exp(-k*.5),xc=X(110);ctx.beginPath();ctx.moveTo(0,Y0);
+    for(let x=0;x<=X(141);x+=3)ctx.lineTo(x,Y0-h*(G((x-(xc-d))/22)+G((x-Math.min(xc+d,X(136)))/22)));ctx.lineTo(X(141),Y0);ctx.closePath();ctx.fillStyle='#2f7fc4';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    if(full&&k<2.4)label('津波',Math.max(40,xc-d),Y0-h-14,{c:'#0b4f8a'});}
+}
+function akiLayer(full){
+  const C=7,L=3.5,tc=((T%C)+C)%C,x=X(305),y=topAt(x)+24;
+  if(full){arrow(x-22,y+6,x-62,y-2,'#fff',3,10);arrow(x+22,y+10,x+62,y+28,'#fff',3,10);}
+  const k=tc-L;
+  if(k>=0&&k<2.5){ctx.strokeStyle='#ffd23f';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-6,y-14);ctx.lineTo(x+6,y+14);ctx.stroke();star(x,y,15,1-k/2.5);}
+  if(full){box(x-150,Yd(88),300,46,10);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fill();
+    label('沈み込んだプレートの中で割れる',x,Yd(88)+15,{halo:false,s:15});label('深さ 約50km（芸予地震のタイプ）',x,Yd(88)+34,{halo:false,s:13,w:500});}
+}
+let events=0;
+function tsuLayer(full){
+  const C=7,L=4.5,tc=((T%C)+C)%C,x=X(366),k=tc-L,m=k<0?tc/L:0;
+  ctx.strokeStyle=k>=0&&k<1.5?'#ffd23f':`rgba(215,38,61,${0.5+0.5*m})`;ctx.lineWidth=k>=0&&k<1.5?5:3.5;
+  ctx.beginPath();ctx.moveTo(x,surfY(366)-2);ctx.lineTo(x+4,Yd(18));ctx.stroke();
+  if(full&&k<0){const a=6+16*m;arrow(x-70,Yd(14),x-70+a,Yd(14),'#7a1020',3,9);arrow(x+70,Yd(14),x+70-a,Yd(14),'#7a1020',3,9);}
+  if(k>=0&&k<2.5)star(x+2,Yd(10),14,1-k/2.5);
+  if(full)label('筒賀断層',x+46,Yd(26),{c:'#c1121f'});
+}
+function tsuInset(){
+  const C=7,L=4.5,tc=((T%C)+C)%C,k=tc-L;
+  const bx=498,by=318,bw=270,bh=200,cx=bx+bw/2,cy=by+bh/2+12;
+  box(bx,by,bw,bh,12);ctx.fillStyle='rgba(255,252,244,.96)';ctx.fill();ctx.strokeStyle='#6f5129';ctx.lineWidth=1.5;ctx.stroke();
+  label('上から見ると（右横ずれ）',cx,by+20,{halo:false,s:15});
+  const n=Math.floor(T/C)%4,step=9,anim=k>=0?Math.min(1,k/0.4):0,off=(n+anim)*step*(n===3&&k>=0?0:1)+(n===3&&k>=0?0:0);
+  const fx=0.857,fy=-0.514,px=0.514,py=0.857;
+  ctx.save();box(bx+4,by+36,bw-8,bh-40,8);ctx.clip();
+  ctx.fillStyle='#e6dcc4';ctx.fillRect(bx,by+36,bw,bh);
+  ctx.strokeStyle='#2f7fc4';ctx.lineWidth=7;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(cx-px*110+fx*off,cy-py*110+fy*off);ctx.lineTo(cx+fx*off,cy+fy*off);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-fx*off,cy-fy*off);ctx.lineTo(cx+px*110-fx*off,cy+py*110-fy*off);ctx.stroke();
+  ctx.strokeStyle='#c1121f';ctx.lineWidth=3;ctx.setLineDash([8,5]);ctx.beginPath();ctx.moveTo(cx-fx*160,cy-fy*160);ctx.lineTo(cx+fx*160,cy+fy*160);ctx.stroke();ctx.setLineDash([]);
+  arrow(cx-px*58+fx*-18,cy-py*58+fy*-18,cx-px*58+fx*18,cy-py*58+fy*18,'#3b2a12',3,9);
+  arrow(cx+px*58+fx*18,cy+py*58+fy*18,cx+px*58-fx*18,cy+py*58-fy*18,'#3b2a12',3,9);
+  ctx.restore();
+  label('川',cx-px*70+fx*off+14,cy-py*70+fy*off,{s:14,c:'#0b4f8a'});
+  label('断層',cx+fx*100,cy+fy*100+16,{s:13,c:'#c1121f'});
+  label(off>0?`ずれ ${n+(k>=0?1:0)}回分`:'これからずれる',cx,by+bh-14,{s:13,w:500,halo:false});
+}
+function magmaLayer(full,dt){
+  const vx=X(416),cy=Yd(9);
+  if(playing){
+    if(Math.random()<dt*5){const x=X(392+Math.random()*48);parts.push({x,y:topAt(x)-2,t:'w',vx:0,vy:-16-Math.random()*8});}
+    for(const p of parts){
+      if(p.t==='w'&&p.y<Yd(60)){p.t='m';p.r=4+Math.random()*3;}
+      if(p.t==='m'){p.vx=(vx-p.x)*0.5;p.vy=-24;}
+      if(p.t==='s'){p.vy=-20;p.vx=6;p.life-=dt;}
+      p.x+=p.vx*dt*speed;p.y+=p.vy*dt*speed;
+      if(p.t==='m'&&p.y<cy+4){p.dead=true;chamber+=0.07;}
+      if(p.t==='s'&&p.life<=0)p.dead=true;
+    }
+    for(let i=parts.length-1;i>=0;i--)if(parts[i].dead)parts.splice(i,1);
+    if(chamber>=1){chamber=0;for(let i=0;i<14;i++)parts.push({x:vx+(Math.random()-.5)*10,y:Y0-36,t:'s',vx:0,vy:0,life:1.5+Math.random(),r:6+Math.random()*7});}
+  }
+  // マグマだまりと通り道
+  ctx.strokeStyle='rgba(226,54,28,.8)';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(vx,cy);ctx.lineTo(vx,Y0-32);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(vx,cy,30,10,0,0,Math.PI*2);ctx.fillStyle=`rgb(${200+40*chamber},${60-20*chamber},28)`;ctx.fill();ctx.strokeStyle='#7a1a0a';ctx.lineWidth=1.5;ctx.stroke();
+  for(const p of parts){ctx.beginPath();if(p.t==='w'){ctx.arc(p.x,p.y,2.6,0,7);ctx.fillStyle='#4fc3ff';}else if(p.t==='m'){ctx.arc(p.x,p.y,p.r,0,7);ctx.fillStyle='rgba(226,54,28,.9)';}else{ctx.arc(p.x,p.y,p.r,0,7);ctx.fillStyle=`rgba(110,110,110,${Math.max(0,p.life/2)})`;}ctx.fill();}
+  // 温泉：雨水がしみこむ（青）→ マグマの熱で温まる → わき出す（橙）
+  const ox=X(395),oy=surfY(395),ix=X(381),iy=surfY(381),hx=X(392),hy=Yd(7);
+  const legs=[[ix,iy,X(383),Yd(6),hx,hy,'#1565c0'],[hx,hy,X(396),Yd(4),ox,oy,'#e8590c']];
+  for(const[a,b,c,d,e,f,col] of legs){ctx.lineCap='round';ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(a,b);ctx.quadraticCurveTo(c,d,e,f);ctx.stroke();
+    ctx.strokeStyle=col;ctx.lineWidth=6;ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=2.5;ctx.setLineDash([3,9]);ctx.lineDashOffset=-T*22;ctx.stroke();ctx.setLineDash([]);}
+  arrow(ix,iy-22,ix,iy-4,'#1565c0',3,9);
+  // わき出し口の湯だまり
+  ctx.beginPath();ctx.ellipse(ox,oy-1,9,3.5,0,0,7);ctx.fillStyle='#ff9f5a';ctx.fill();ctx.strokeStyle='#b8430a';ctx.lineWidth=1.5;ctx.stroke();
+  // 温泉マーク（♨）を地上に描く
+  const my=oy-6,wob=Math.sin(T*3)*1.5;
+  for(const[col,w] of [['#fff',7],['#d7263d',3.2]]){ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap='round';
+    ctx.beginPath();ctx.arc(ox,my-12,13,0.15,Math.PI-0.15);ctx.stroke();
+    for(const dx of [-7,0,7]){ctx.beginPath();ctx.moveTo(ox+dx,my-14);ctx.bezierCurveTo(ox+dx-6+wob,my-21,ox+dx+6-wob,my-27,ox+dx,my-36);ctx.stroke();}}
+  label('温泉',ox,my-48,{c:'#d7263d',s:16});
+  if(full){label('雨水がしみこむ',X(378),Yd(3)+2,{a:'right',c:'#0b4f8a',hc:'rgba(255,240,215,.9)',s:13});label('熱で温まる',hx,hy+16,{c:'#b8430a',hc:'rgba(255,240,215,.9)',s:13});
+    label('水が出る',X(400),Yd(80),{c:'#0b3b66',hc:'rgba(220,240,255,.9)',s:14});
+    label('マグマができて上がる',X(345),Yd(46),{c:'#fff',halo:false,s:15});
+    label('マグマだまり',vx+40,cy+22,{a:'left',c:'#fff',halo:false,s:14});}
+}
+
+/* ---------- 地図 ---------- */
+const S=34,P=(lo,la)=>[60+(lo-128)*0.82*S,15+(45.8-la)*S];
+const HONSHU=[[130.93,33.95],[131.25,33.95],[131.8,34.05],[132.1,33.95],[132.2,34.17],[132.46,34.36],[132.56,34.25],[132.75,34.22],[133.0,34.38],[133.4,34.42],[133.9,34.55],[134.3,34.7],[135.3,34.65],[135.2,34.3],[135.1,33.9],[135.77,33.43],[136.2,34.07],[136.85,34.3],[137.0,34.6],[138.2,34.6],[138.7,35.0],[138.8,34.6],[139.1,35.2],[139.7,35.3],[139.8,34.9],[140.4,35.2],[140.8,35.7],[140.6,36.3],[141.0,37.0],[141.0,38.1],[141.5,38.3],[142.0,39.5],[141.5,40.5],[141.4,41.4],[140.3,41.2],[140.0,40.6],[139.7,39.9],[140.0,39.7],[139.6,38.5],[139.0,37.9],[137.2,36.75],[137.0,37.0],[137.3,37.5],[136.7,36.8],[136.1,36.2],[136.05,35.65],[135.7,35.5],[135.1,35.75],[134.2,35.53],[133.33,35.45],[133.23,35.54],[133.3,35.6],[133.0,35.57],[132.63,35.43],[132.68,35.4],[132.45,35.18],[132.22,35.0],[132.07,34.9],[131.85,34.68],[131.4,34.42],[130.93,33.95]];
+const SHIKOKU=[[133.0,34.07],[132.7,33.85],[132.0,33.34],[132.4,33.25],[132.55,33.22],[132.5,32.95],[133.02,32.72],[133.5,33.5],[134.2,33.25],[134.6,33.8],[134.6,34.2],[133.9,34.35],[133.3,34.0],[133.0,34.07]];
+const KYUSHU=[[130.93,33.95],[131.75,33.55],[131.6,33.25],[132.0,33.0],[131.8,32.5],[131.4,31.8],[131.1,31.2],[130.7,31.0],[130.6,31.5],[130.2,31.2],[130.2,31.8],[130.4,32.3],[130.6,32.7],[130.2,32.7],[129.8,32.7],[129.7,33.2],[129.9,33.5],[130.4,33.6],[130.93,33.95]];
+const HOKKAIDO=[[139.9,41.5],[140.6,41.8],[141.1,41.8],[140.7,42.3],[141.0,42.5],[141.7,42.6],[143.2,42.0],[143.7,42.6],[144.4,43.0],[145.6,43.3],[145.2,43.6],[145.3,44.3],[144.3,44.0],[142.9,44.7],[141.9,45.5],[141.6,45.0],[141.8,44.0],[141.4,43.3],[140.4,43.3],[140.0,42.6],[139.8,42.1],[139.9,41.5]];
+const JT=[[149,44.2],[147,42.8],[145.6,41.6],[144.4,40.2],[143.9,38.5],[143.0,36.8],[142.2,35.3],[142.0,34.2],[142.3,32.5],[142.6,30.5],[142.7,29.5]];
+const SAG=[[142.0,34.2],[140.5,34.7],[139.3,35.2]];
+const NAN=[[138.6,35.1],[138.55,34.6],[138.2,34.0],[137.4,33.7],[136.6,33.4],[135.6,33.0],[134.6,32.7],[133.6,32.3],[132.8,32.0],[132.2,31.4],[131.6,30.8],[131.0,30.0],[130.6,29.5]];
+const AMB=[[141.0,45.8],[140.0,44.5],[139.3,42.5],[139.1,40.5],[138.9,39.0],[138.6,37.8],[137.9,36.8],[138.0,35.9],[138.4,35.3],[138.6,35.1]];
+const SRC=[...NAN.slice(0,10),[131.3,31.6],[131.6,32.6],[132.4,33.4],[133.4,33.9],[134.5,34.1],[135.5,34.4],[136.5,34.8],[137.5,35.3],[138.3,35.5]];
+const VOLC=[[132.62,35.14,'三瓶山'],[131.1,32.88,'阿蘇山'],[130.66,31.58,'桜島'],[138.73,35.36,'富士山'],[138.52,36.41,'浅間山'],[137.48,35.89,''],[141.0,39.85,''],[140.44,38.14,''],[140.84,42.54,''],[130.29,32.76,'']];
+function poly(pts,pr,close=true){ctx.beginPath();pts.forEach((p,i)=>{const q=pr(p[0],p[1]);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);});if(close)ctx.closePath();}
+function teeth(pts,pr,c){ctx.fillStyle=c;for(let i=1;i<pts.length;i++){const a=pr(...pts[i-1]),b=pr(...pts[i]);const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy),ux=dx/L,uy=dy/L,nx=-uy,ny=ux;for(let s=8;s<L-4;s+=18){const x=a[0]+ux*s,y=a[1]+uy*s;ctx.beginPath();ctx.moveTo(x-ux*5,y-uy*5);ctx.lineTo(x+ux*5,y+uy*5);ctx.lineTo(x+nx*8,y+ny*8);ctx.closePath();ctx.fill();}}}
+function tri(x,y,r){ctx.beginPath();ctx.moveTo(x,y-r);ctx.lineTo(x+r*.9,y+r*.6);ctx.lineTo(x-r*.9,y+r*.6);ctx.closePath();ctx.fillStyle='#c1121f';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.2;ctx.stroke();}
+function drawLand(pr){ctx.fillStyle='#f4ecd6';ctx.strokeStyle='#8a7a55';ctx.lineWidth=1.2;for(const L of [HONSHU,SHIKOKU,KYUSHU,HOKKAIDO]){poly(L,pr);ctx.fill();ctx.stroke();}}
+function drawMap(){
+  ctx.fillStyle='#bfe0f2';ctx.fillRect(0,0,W,H);
+  // プレートの色分け
+  const fills=[[[...JT,[149,29],[149,44.2]],'rgba(60,100,200,.20)'],[[[138.6,35.1],...SAG.slice().reverse(),...JT.slice(7),[142.7,29],[130.4,29],...NAN.slice().reverse()],'rgba(30,160,140,.28)'],[[[127,45.8],...AMB,...NAN,[130.4,29],[127,29]],'rgba(235,160,60,.30)'],[[[141.0,45.8],[149,45.8],...JT.slice(0,8),...SAG,[138.6,35.1],...AMB.slice().reverse()],'rgba(150,100,200,.16)']];
+  for(const[pts,c] of fills){poly(pts,P);ctx.fillStyle=c;ctx.fill();}
+  drawLand(P);
+  // 想定震源域
+  poly(SRC,P);ctx.fillStyle=`rgba(215,38,61,${0.16+0.1*Math.sin(T*3)})`;ctx.fill();
+  // 境界
+  ctx.lineWidth=3;ctx.strokeStyle='#22315c';poly(JT,P,false);ctx.stroke();poly(SAG,P,false);ctx.stroke();teeth(JT,P,'#22315c');teeth(SAG,P,'#22315c');
+  ctx.strokeStyle='#c1121f';poly(NAN,P,false);ctx.stroke();teeth(NAN,P,'#c1121f');
+  ctx.setLineDash([4,5]);ctx.strokeStyle='#5b3f8c';ctx.lineWidth=2;poly(AMB,P,false);ctx.stroke();ctx.setLineDash([]);
+  // 動く矢印
+  const mv=(T*18)%36;
+  for(const[lo,la,dx,dy,c] of [[146.2,37.6,-0.95,-0.3,'#1f3f99'],[136.8,31.2,-0.75,-0.66,'#0e7a6a']]){const[x,y]=P(lo,la);const a=1-mv/36;ctx.globalAlpha=0.35+0.65*a;arrow(x+dx*mv,y+dy*mv,x+dx*(mv+56),y+dy*(mv+56),c,7,18);ctx.globalAlpha=1;}
+  for(const[lo,la] of [[134.8,32.1],[136.6,32.7],[133.0,31.7]]){const[x,y]=P(lo,la);const k=(T*0.9+lo)%1;ctx.globalAlpha=1-k;arrow(x+8,y-4,x+8-12*k-6,y-4-10*k-6,'#c1121f',2.5,8);ctx.globalAlpha=1;}
+  VOLC.forEach(v=>{const[x,y]=P(v[0],v[1]);tri(x,y,6);});
+  // 断面線
+  const a=P(133.0,31.4),b=P(132.62,35.6);ctx.setLineDash([6,4]);ctx.strokeStyle='#111';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();ctx.setLineDash([]);
+  label('A',a[0]+10,a[1]+4,{s:15});label('B',b[0]-12,b[1]-6,{s:15});
+  // プレート名
+  label('太平洋プレート',P(145,33.6)[0],P(145,33.6)[1],{c:'#1f3f99',s:17});label('約8cm/年',P(145,33.6)[0],P(145,33.6)[1]+20,{c:'#1f3f99',s:13,w:500});
+  label('フィリピン海プレート',P(137,31.2)[0],P(137,31.2)[1],{c:'#0e6a5c',s:17});label('約3〜5cm/年',P(137,31.2)[0],P(137,31.2)[1]+20,{c:'#0e6a5c',s:13,w:500});
+  label('ユーラシアプレート',P(131.6,40.6)[0],P(131.6,40.6)[1],{c:'#9a5a10',s:17});
+  label('北アメリカプレート',P(145.2,44.9)[0],P(145.2,44.9)[1],{c:'#5b3f8c',s:16});
+  label('南海トラフ',P(135.4,32.3)[0],P(135.4,32.3)[1]+6,{c:'#c1121f',s:15});
+  label('日本海溝',P(144.6,39.2)[0]+20,P(144.6,39.2)[1],{c:'#22315c',s:14});
+  label('日本海',P(134.5,39)[0],P(134.5,39)[1],{c:'#2b5c80',s:14,w:500,halo:false});
+  // 凡例
+  const lx=612;box(lx,14,374,268,12);ctx.fillStyle='rgba(255,255,255,.92)';ctx.fill();
+  label('地図の見方',lx+16,34,{a:'left',halo:false,s:16});
+  const rows=[['line','#22315c','海溝・トラフ（▲の側へ沈み込む）'],['line','#c1121f','南海トラフ'],['area','rgba(215,38,61,.3)','南海トラフ地震の想定震源域（およそ）'],['dash','#5b3f8c','はっきりしない境界'],['ell','#6a1b9a','安芸灘〜豊後水道の地震の領域'],['fault','#c1121f','筒賀断層（右下の拡大図）'],['tri','','主な火山'],['sec','#111','断面の位置 A–B']];
+  rows.forEach((r,i)=>{const y=62+i*27,x=lx+18;ctx.lineWidth=3;ctx.setLineDash(r[0]==='dash'||r[0]==='sec'?[5,4]:[]);
+    if(r[0]==='area'){ctx.fillStyle=r[1];ctx.fillRect(x,y-7,30,14);}else if(r[0]==='tri')tri(x+15,y+1,7);else if(r[0]==='ell'){ctx.strokeStyle=r[1];ctx.lineWidth=2;ctx.setLineDash([4,3]);ctx.beginPath();ctx.ellipse(x+15,y,14,7,0,0,7);ctx.stroke();}else{ctx.strokeStyle=r[1];ctx.lineWidth=r[0]==='fault'?4:3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+30,y);ctx.stroke();}
+    ctx.setLineDash([]);label(r[2],x+42,y,{a:'left',halo:false,s:14,w:500});});
+  // 広島周辺の拡大
+  const zx=612,zy=294,zw=374,zh=252;box(zx,zy,zw,zh,12);ctx.fillStyle='#bfe0f2';ctx.fill();
+  const Z=(lo,la)=>[zx+zw/2+(lo-132.55)*0.82*112,zy+zh/2+12+(34.35-la)*112];
+  ctx.save();box(zx,zy,zw,zh,12);ctx.clip();drawLand(Z);
+  const e=Z(132.3,33.75);ctx.strokeStyle='#6a1b9a';ctx.lineWidth=2.5;ctx.setLineDash([6,4]);ctx.beginPath();ctx.ellipse(e[0],e[1],52,34,-0.5,0,7);ctx.stroke();
+  const za=Z(133.0,31.4),zb=Z(132.62,35.6);ctx.strokeStyle='#111';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(...za);ctx.lineTo(...zb);ctx.stroke();ctx.setLineDash([]);
+  const f1=Z(132.5,34.755),f2=Z(132.03,34.408);ctx.strokeStyle='#c1121f';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(...f1);ctx.lineTo(...f2);ctx.stroke();
+  const sb=Z(132.62,35.14);tri(sb[0],sb[1],8);
+  const hm=Z(132.46,34.39),kh=Z(132.54,34.68);ctx.fillStyle='#111';ctx.beginPath();ctx.arc(hm[0],hm[1],4.5,0,7);ctx.fill();star(kh[0],kh[1],9);
+  ctx.restore();
+  label('広島周辺',zx+14,zy+18,{a:'left',s:15});
+  label('北広島町',kh[0]+14,kh[1]-6,{a:'left',c:'#c1121f',s:15});label('広島市',hm[0]+8,hm[1]+12,{a:'left',s:14});
+  label('筒賀断層',f2[0]-4,f2[1]+16,{s:14,c:'#c1121f'});label('三瓶山',sb[0]+12,sb[1]-4,{a:'left',s:14});
+  label('安芸灘〜伊予灘',e[0]-6,e[1]+44,{s:13,c:'#6a1b9a'});label('四国',Z(132.95,33.55)[0],Z(132.95,33.55)[1],{s:14,w:500});
+}
+
+
+function miniMap(){
+  const bx=782,by=296,bw=204,bh=250;
+  box(bx,by,bw,bh,12);ctx.fillStyle='#bfe0f2';ctx.fill();
+  const Z=(lo,la)=>[bx+bw/2+(lo-132.4)*0.82*36,by+30+110+(33.5-la)*36];
+  ctx.save();box(bx,by,bw,bh,12);ctx.clip();
+  drawLand(Z);
+  poly(SRC,Z);ctx.fillStyle='rgba(215,38,61,.18)';ctx.fill();
+  ctx.strokeStyle='#c1121f';ctx.lineWidth=2.5;poly(NAN,Z,false);ctx.stroke();teeth(NAN,Z,'#c1121f');
+  const f1=Z(132.5,34.755),f2=Z(132.03,34.408);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(...f1);ctx.lineTo(...f2);ctx.stroke();
+  const a=Z(133.0,31.4),b=Z(132.62,35.6),pulse=0.5+0.5*Math.sin(T*4);
+  ctx.strokeStyle=`rgba(17,17,17,${0.55+0.45*pulse})`;ctx.lineWidth=3;ctx.setLineDash([7,4]);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();ctx.setLineDash([]);
+  const sb=Z(132.62,35.14);tri(sb[0],sb[1],6);
+  const kh=Z(132.54,34.68);star(kh[0],kh[1],7);
+  ctx.restore();
+  ctx.fillStyle='rgba(255,255,255,.92)';box(bx,by,bw,26,12);ctx.fill();
+  label('この線で切った断面',bx+bw/2,by+14,{s:14,halo:false});
+  label('A',a[0]+12,Math.min(a[1],by+bh-12)-2,{s:15});label('B',b[0]+12,Math.max(b[1],by+40)+4,{s:15});
+  const nt=Z(134.2,32.55);label('南海トラフ',nt[0],nt[1]+4,{s:12,c:'#c1121f'});
+  label('北広島町',kh[0]+30,kh[1]+12,{s:12,c:'#c1121f'});
+  const sk=Z(133.4,33.55);label('四国',sk[0],sk[1],{s:12,w:500});
+  const ky=Z(131.0,32.6);label('九州',ky[0],ky[1],{s:12,w:500});
+  ctx.strokeStyle='#26324a';ctx.lineWidth=1.5;box(bx,by,bw,bh,12);ctx.stroke();
+}
+
+/* ---------- 毎フレーム ---------- */
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(playing){prevT=T;T+=dt*speed;}else prevT=T;
+  draw(dt);requestAnimationFrame(frame);
+}
+function setStatus(s){if(s!==lastStatus){document.getElementById('status').textContent=s;lastStatus=s;}}
+function draw(dt=0){
+  ctx.setTransform(dpr*sc,0,0,dpr*sc,0,0);ctx.clearRect(0,0,W,H);
+  if(shake>0){shake=Math.max(0,shake-dt*speed*1.1);}
+  if(shake>0)ctx.translate((Math.random()-.5)*shake*10,(Math.random()-.5)*shake*7);
+  if(scene===0){drawMap();setStatus('フィリピン海プレートは北西へ動き、南海トラフで陸のプレートの下へ潜り込んでいる');return;}
+  const st=nankai(T),useN=scene===1||scene===5;
+  ctx.save();ctx.translate(W,0);ctx.scale(-1,1);MIR=true;
+  drawSection(useN?st.A:0);
+  if(scene===1){nankaiLayer(st,true);if(crossed(9,6.2))shake=1;
+    setStatus(['① 海のプレートが沈み込む','② 陸のプレートの先が引きずり込まれ、ひずみがたまる','③ たえきれずにはね上がる → 巨大地震・津波'][st.ph]);}
+  if(scene===2){akiLayer(true);if(crossed(7,3.5))shake=.6;const k=((T%7)+7)%7-3.5;setStatus(k>=0&&k<2.5?'② プレートの中の岩盤が割れる → 安芸灘の地震（深さ約50km）':'① 沈み込んだプレートは曲げられ、引っ張られている');}
+  if(scene===3){tsuLayer(true);if(crossed(7,4.5))shake=.8;const k=((T%7)+7)%7-4.5;setStatus(k>=0&&k<2.5?'② 断層がずれる → 浅い地震。真上の北広島町は強く揺れる':'① プレートに押されて、陸の岩盤にひずみがたまる');}
+  if(scene===4){magmaLayer(true,dt);setStatus(parts.some(p=>p.t==='s')?'③ マグマが地表に出て噴火 → くり返して火山ができる':'① プレートから水が出る → ② マントルがとけてマグマになり、上がっていく');}
+  if(scene===5){magmaLayer(false,dt);tsuLayer(false);akiLayer(false);nankaiLayer(st,false);
+    if(crossed(9,6.2))shake=1;if(crossed(7,3.5))shake=Math.max(shake,.5);if(crossed(7,4.5))shake=Math.max(shake,.6);
+    label('① プレートの境目',X(200),topAt(X(200))-20,{c:'#7a1020',hc:'rgba(255,240,215,.85)',s:14});
+    label('② プレートの中',X(305),topAt(X(305))+62,{c:'#fff',halo:false,s:14});
+    label('③ 陸のプレートの中',X(366)-10,Yd(22),{a:'right',c:'#c1121f'});
+    label('④ マグマ・火山・温泉',X(416),Yd(31),{c:'#fff',halo:false,s:14});
+    setStatus('プレートの沈み込みから、3つのタイプの地震と、火山・温泉が生まれる');}
+  MIR=false;ctx.restore();
+  // ここから画面の向きのまま描く
+  if(scene===1){const m=Math.max(0,st.A)/14;box(568,480,200,34,8);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fill();ctx.fillStyle='#e9ecef';box(658,492,96,10,5);ctx.fill();ctx.fillStyle=m>.85?'#c1121f':'#f08c00';box(658,492,96*m,10,5);ctx.fill();label('ひずみ',610,497,{s:14,halo:false});}
+  if(scene===3)tsuInset();
+  miniMap();
+  label('← 北（日本海側）B',12,H-14,{a:'left',s:13,w:500,c:'#fff',halo:false});
+  label('A 南（太平洋側） →',772,H-14,{a:'right',s:13,w:500,c:'#fff',halo:false});
+}
+
+/* ---------- 操作 ---------- */
+const tabs=[...document.querySelectorAll('#tabs button')];
+function go(i){scene=(i+6)%6;T=0;prevT=0;shake=0;parts.length=0;chamber=0;
+  tabs.forEach((b,j)=>b.setAttribute('aria-selected',j===scene));
+  const c=CAPS[scene];document.getElementById('cap').innerHTML=`<span class="tag">${c.tag}</span><h2>${c.h}</h2><p>${c.p}</p><ul>${c.li.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  try{location.hash='s'+(scene+1);}catch(e){}
+  if(!playing)draw();}
+tabs.forEach((b,i)=>b.addEventListener('click',()=>go(i)));
+document.getElementById('prev').onclick=()=>go(scene-1);
+document.getElementById('next').onclick=()=>go(scene+1);
+document.getElementById('again').onclick=()=>go(scene);
+const pb=document.getElementById('play');
+function setPlay(v){playing=v;pb.textContent=v?'⏸ 一時停止':'▶ 再生';}
+pb.onclick=()=>setPlay(!playing);
+const sp=document.getElementById('spd');sp.oninput=()=>{speed=+sp.value;document.getElementById('spdv').textContent=speed+'倍';};
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')go(scene+1);if(e.key==='ArrowLeft')go(scene-1);if(e.key===' '){e.preventDefault();setPlay(!playing);}});
+function resize(){const r=cv.getBoundingClientRect();if(!r.width)return;dpr=window.devicePixelRatio||1;cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);sc=r.width/W;draw();}
+const ro=new ResizeObserver(resize);ro.observe(cv);
+const m=/^#s([1-6])$/.exec(location.hash);go(m?+m[1]-1:0);
+if(reduce)setPlay(false);
+requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
